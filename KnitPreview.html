@@ -1,0 +1,2721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sock Pixel Art Designer - Multi-Layer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            font-weight: 300;
+            font-size: 2.5em;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 250px auto 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* Layer Panel Styles */
+        .layer-panel {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 800px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .layer-panel h3 {
+            margin-bottom: 15px;
+            color: #fff;
+            font-weight: 400;
+            font-size: 1.1em;
+        }
+
+        .layer-controls {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .layer-controls button {
+            flex: 1;
+            min-width: 40px;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .layers-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .layer-item {
+            background: #333;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .layer-item.active {
+            background: #444;
+            border: 2px solid #007bff;
+        }
+
+        .layer-item.dragging {
+            opacity: 0.5;
+        }
+
+        .layer-item.drag-over {
+            border-top: 3px solid #007bff;
+        }
+
+        .layer-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .layer-visibility {
+            width: 20px;
+            height: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .layer-visibility svg {
+            width: 16px;
+            height: 16px;
+            fill: #888;
+        }
+
+        .layer-visibility.visible svg {
+            fill: #fff;
+        }
+
+        .layer-lock {
+            width: 20px;
+            height: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .layer-lock svg {
+            width: 14px;
+            height: 14px;
+            fill: #888;
+        }
+
+        .layer-lock.locked svg {
+            fill: #ff6b6b;
+        }
+
+        .layer-name {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            padding: 2px 5px;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .layer-name:focus {
+            background: #444;
+        }
+
+        .layer-thumbnail {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            image-rendering: pixelated;
+            background-color: #222;
+            background-image: 
+                linear-gradient(45deg, #333 25%, transparent 25%),
+                linear-gradient(-45deg, #333 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #333 75%),
+                linear-gradient(-45deg, transparent 75%, #333 75%);
+            background-size: 10px 10px;
+            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+        }
+
+        .layer-settings {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .opacity-slider {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .opacity-slider input {
+            flex: 1;
+            height: 4px;
+        }
+
+        .opacity-value {
+            width: 35px;
+            text-align: right;
+            color: #888;
+        }
+
+        .blend-mode-select {
+            background: #444;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .canvas-section {
+            display: flex;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            border: 2px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            cursor: move;
+        }
+
+        .resize-handles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+
+        .resize-handles.active {
+            display: block;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #007bff;
+            border: 2px solid #fff;
+            border-radius: 2px;
+            pointer-events: auto;
+            cursor: nwse-resize;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            opacity: 0.8;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .resize-handle:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        .resize-handle.top-left {
+            top: -6px;
+            left: -6px;
+            cursor: nwse-resize;
+        }
+
+        .resize-handle.top-right {
+            top: -6px;
+            right: -6px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.bottom-left {
+            bottom: -6px;
+            left: -6px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.bottom-right {
+            bottom: -6px;
+            right: -6px;
+            cursor: nwse-resize;
+        }
+
+        .resize-handle.top {
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: ns-resize;
+        }
+
+        .resize-handle.right {
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: ew-resize;
+        }
+
+        .resize-handle.bottom {
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: ns-resize;
+        }
+
+        .resize-handle.left {
+            left: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: ew-resize;
+        }
+
+        .transform-origin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+
+        .transform-origin.active {
+            display: block;
+        }
+
+        .transform-origin::before,
+        .transform-origin::after {
+            content: '';
+            position: absolute;
+            background: #007bff;
+            opacity: 0.8;
+        }
+
+        .transform-origin::before {
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+
+        .transform-origin::after {
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            transform: translateX(-50%);
+        }
+
+        .controls {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            margin-bottom: 10px;
+            color: #fff;
+            font-weight: 400;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #4a4a4a;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        button:hover {
+            background: #5a5a5a;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.primary {
+            background: #007bff;
+        }
+
+        button.primary:hover {
+            background: #0056b3;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        .keyboard-hint {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-left: 5px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            background: #4a4a4a;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-label:hover {
+            background: #5a5a5a;
+            transform: translateY(-1px);
+        }
+
+        .slider-container {
+            margin: 10px 0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #4a4a4a;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #007bff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #007bff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid #444;
+            cursor: move;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.1);
+            border-color: #666;
+        }
+        
+        .color-swatch.dragging {
+            opacity: 0.5;
+            transform: scale(0.9);
+        }
+        
+        .color-swatch.drag-over {
+            border-color: #007bff;
+            transform: scale(1.15);
+        }
+        
+        .color-divider {
+            width: 2px;
+            height: 30px;
+            background: #007bff;
+            margin: 0 5px;
+            position: relative;
+        }
+        
+        .color-divider::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -4px;
+            width: 10px;
+            height: 40px;
+            cursor: ew-resize;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .stats div {
+            margin-bottom: 5px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-toggle button {
+            flex: 1;
+        }
+
+        .mode-toggle button.active {
+            background: #007bff;
+        }
+
+        .drop-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 123, 255, 0.1);
+            border: 3px dashed #007bff;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        .drop-zone.active {
+            display: flex;
+        }
+
+        .drop-zone p {
+            font-size: 18px;
+            color: #007bff;
+            font-weight: 500;
+        }
+
+        .history-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .active-layer-info {
+            font-size: 12px;
+            color: #007bff;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sock Pixel Art Designer - Multi-Layer</h1>
+        
+        <div class="main-layout">
+            <div class="layer-panel">
+                <h3>Layers</h3>
+                <div class="layer-controls">
+                    <button onclick="addLayer()" title="Add Layer">+</button>
+                    <button onclick="duplicateLayer()" title="Duplicate Layer">⧉</button>
+                    <button onclick="deleteLayer()" class="danger" title="Delete Layer">🗑</button>
+                    <button onclick="mergeDown()" title="Merge Down">⬇</button>
+                </div>
+                <div class="layers-container" id="layersContainer"></div>
+                <div class="active-layer-info" id="activeLayerInfo">Active: Layer 1</div>
+            </div>
+            
+            <div class="canvas-section">
+                <div class="canvas-container">
+                    <h3>Design Canvas</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="mainCanvas" width="336" height="800"></canvas>
+                        <div class="resize-handles" id="resizeHandles">
+                            <div class="resize-handle top-left" data-handle="top-left"></div>
+                            <div class="resize-handle top-right" data-handle="top-right"></div>
+                            <div class="resize-handle bottom-left" data-handle="bottom-left"></div>
+                            <div class="resize-handle bottom-right" data-handle="bottom-right"></div>
+                            <div class="resize-handle top" data-handle="top"></div>
+                            <div class="resize-handle right" data-handle="right"></div>
+                            <div class="resize-handle bottom" data-handle="bottom"></div>
+                            <div class="resize-handle left" data-handle="left"></div>
+                        </div>
+                        <div class="transform-origin" id="transformOrigin"></div>
+                        <div class="drop-zone" id="dropZone">
+                            <p>Drop image here</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="canvas-container">
+                    <h3>Pixelated Preview</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="previewCanvas" width="336" height="800"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <h3>Image Upload</h3>
+                    <div class="button-group">
+                        <label class="file-label">
+                            <input type="file" id="imageUpload" accept="image/*">
+                            Choose Image
+                        </label>
+                        <button onclick="clearImage()">Clear Layer</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Edit History</h3>
+                    <div class="button-group">
+                        <button id="undoBtn" onclick="undo()" disabled>
+                            Undo <span class="keyboard-hint">⌘Z</span>
+                        </button>
+                        <button id="redoBtn" onclick="redo()" disabled>
+                            Redo <span class="keyboard-hint">⌘⇧Z</span>
+                        </button>
+                    </div>
+                    <div class="history-info" id="historyInfo">History: 0 / 0</div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Quick Adjustments</h3>
+                    <div class="button-group">
+                        <button onclick="fitToWidth()">Fit to Width</button>
+                        <button onclick="fitToHeight()">Fit to Height</button>
+                        <button onclick="centerHorizontal()">Center H</button>
+                        <button onclick="centerVertical()">Center V</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>View Mode</h3>
+                    <div class="mode-toggle">
+                        <button class="active" onclick="setViewMode('grid')">Grid</button>
+                        <button onclick="setViewMode('solid')">Solid</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Image Position</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>X Position</span>
+                            <span id="xPosLabel">0</span>
+                        </div>
+                        <input type="range" id="xPos" min="-200" max="200" value="0">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Y Position</span>
+                            <span id="yPosLabel">0</span>
+                        </div>
+                        <input type="range" id="yPos" min="-400" max="400" value="0">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Image Scale</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Scale</span>
+                            <span id="scaleLabel">100%</span>
+                        </div>
+                        <input type="range" id="scale" min="10" max="300" value="100">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Image Rotation</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Rotation</span>
+                            <span id="rotationLabel">0°</span>
+                        </div>
+                        <input type="range" id="rotation" min="-180" max="180" value="0">
+                    </div>
+                    <div class="button-group" style="margin-top: 10px;">
+                        <button onclick="rotateImage(-90)">↺ 90°</button>
+                        <button onclick="rotateImage(90)">↻ 90°</button>
+                        <button onclick="flipHorizontal()">↔ Flip H</button>
+                        <button onclick="flipVertical()">↕ Flip V</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Color Reduction</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Max Colors</span>
+                            <span id="colorsLabel">16</span>
+                        </div>
+                        <input type="range" id="maxColors" min="2" max="32" value="16">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Palette Settings</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Max Palette Size</span>
+                            <span id="paletteSizeLabel">255</span>
+                        </div>
+                        <input type="range" id="paletteSize" min="8" max="255" value="255">
+                    </div>
+                    <div class="button-group" style="margin-top: 10px;">
+                        <label class="file-label">
+                            <input type="file" id="paletteUpload" accept="image/*">
+                            Load Palette from Image
+                        </label>
+                        <button onclick="resetPalette()">Reset Palette</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Color Palette (Drag to reorder, adjust divider for color count)</h3>
+                    <div class="color-palette" id="colorPalette"></div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Export</h3>
+                    <div class="button-group">
+                        <button class="primary" onclick="exportDesign()">Export Design</button>
+                        <button onclick="exportGrid()">Export Grid Data</button>
+                        <button onclick="exportLayer()">Export Current Layer</button>
+                        <button onclick="exportAllLayers()">Export All Layers</button>
+                        <button onclick="saveProject()">Save Project</button>
+                        <button onclick="loadProject()">Load Project</button>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <h3>Design Stats</h3>
+                    <div>Grid Size: 168 × 400 stitches</div>
+                    <div>Total Stitches: 67,200</div>
+                    <div id="colorCount">Colors Used: 0</div>
+                    <div id="layerCount">Layers: 1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="projectUpload" accept=".spad" style="display: none;">
+
+    <script>
+        const GRID_WIDTH = 168;
+        const GRID_HEIGHT = 400;
+        const CELL_SIZE = 2;
+        const CANVAS_WIDTH = GRID_WIDTH * CELL_SIZE;
+        const CANVAS_HEIGHT = GRID_HEIGHT * CELL_SIZE;
+        const MAX_HISTORY = 50;
+        const MAX_LAYERS = 20;
+        
+        let mainCanvas, previewCanvas, mainCtx, previewCtx;
+        let isDragging = false;
+        let dragStartX, dragStartY;
+        let viewMode = 'grid';
+        let maxColors = 16;
+        let colorPalette = [];
+        let selectedColorCount = 16; // Number of colors to keep (leftmost)
+        let maxPaletteSize = 255; // Maximum number of colors in palette
+        let draggedColor = null;
+        let colorDividerPosition = 16; // Position of the divider in the palette
+        let dividerHandlersAttached = false;
+        
+        // Layer system
+        let layers = [];
+        let activeLayerId = null;
+        let layerIdCounter = 0;
+        
+        // Resize handle variables
+        let isResizing = false;
+        let resizeHandle = null;
+        let resizeStartX, resizeStartY;
+        let resizeStartScale, resizeStartWidth, resizeStartHeight;
+        let imageBounds = null;
+        
+        // History management
+        let history = [];
+        let historyIndex = -1;
+        let isApplyingHistory = false;
+        
+        // Drag and drop for layer reordering
+        let draggedLayer = null;
+        
+        class Layer {
+            constructor(name = null) {
+                this.id = ++layerIdCounter;
+                this.name = name || `Layer ${this.id}`;
+                this.visible = true;
+                this.locked = false;
+                this.opacity = 1;
+                this.image = null;
+                this.imageX = 0;
+                this.imageY = 0;
+                this.imageScale = 1;
+                this.imageRotation = 0;
+                this.flipH = false;
+                this.flipV = false;
+                this.thumbnail = document.createElement('canvas');
+                this.thumbnail.width = 40;
+                this.thumbnail.height = 40;
+            }
+            
+            updateThumbnail() {
+                const ctx = this.thumbnail.getContext('2d');
+                ctx.clearRect(0, 0, 40, 40);
+                
+                if (this.image) {
+                    ctx.save();
+                    const scale = Math.min(40 / this.image.width, 40 / this.image.height) * this.imageScale;
+                    ctx.translate(20, 20);
+                    ctx.rotate(this.imageRotation * Math.PI / 180);
+                    if (this.flipH) ctx.scale(-1, 1);
+                    if (this.flipV) ctx.scale(1, -1);
+                    ctx.drawImage(
+                        this.image,
+                        -this.image.width * scale / 2,
+                        -this.image.height * scale / 2,
+                        this.image.width * scale,
+                        this.image.height * scale
+                    );
+                    ctx.restore();
+                }
+            }
+        }
+        
+        function createState() {
+            return {
+                layers: layers.map(layer => ({
+                    id: layer.id,
+                    name: layer.name,
+                    visible: layer.visible,
+                    locked: layer.locked,
+                    opacity: layer.opacity,
+                    imageX: layer.imageX,
+                    imageY: layer.imageY,
+                    imageScale: layer.imageScale,
+                    imageRotation: layer.imageRotation,
+                    flipH: layer.flipH,
+                    flipV: layer.flipV,
+                    hasImage: layer.image !== null,
+                    imageSrc: layer.image ? layer.image.src : null
+                })),
+                activeLayerId,
+                maxColors,
+                selectedColorCount,
+                maxPaletteSize,
+                viewMode
+            };
+        }
+        
+        function saveState() {
+            if (isApplyingHistory) return;
+            
+            history = history.slice(0, historyIndex + 1);
+            history.push(createState());
+            
+            if (history.length > MAX_HISTORY) {
+                history.shift();
+            } else {
+                historyIndex++;
+            }
+            
+            updateHistoryButtons();
+        }
+        
+        function applyState(state) {
+            isApplyingHistory = true;
+            
+            // Clear existing layers
+            layers = [];
+            layerIdCounter = Math.max(...state.layers.map(l => l.id), 0);
+            
+            // Recreate layers
+            const loadPromises = [];
+            
+            state.layers.forEach(layerData => {
+                const layer = new Layer(layerData.name);
+                layer.id = layerData.id;
+                layer.visible = layerData.visible;
+                layer.locked = layerData.locked;
+                layer.opacity = layerData.opacity;
+                layer.imageX = layerData.imageX;
+                layer.imageY = layerData.imageY;
+                layer.imageScale = layerData.imageScale;
+                layer.imageRotation = layerData.imageRotation;
+                layer.flipH = layerData.flipH;
+                layer.flipV = layerData.flipV;
+                
+                if (layerData.hasImage && layerData.imageSrc) {
+                    const promise = new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            layer.image = img;
+                            layer.updateThumbnail();
+                            resolve();
+                        };
+                        img.src = layerData.imageSrc;
+                    });
+                    loadPromises.push(promise);
+                }
+                
+                layers.push(layer);
+            });
+            
+            activeLayerId = state.activeLayerId;
+            maxColors = state.maxColors;
+            selectedColorCount = state.selectedColorCount || maxColors;
+            maxPaletteSize = state.maxPaletteSize || 255;
+            viewMode = state.viewMode;
+            
+            // Update UI
+            document.getElementById('maxColors').value = maxColors;
+            document.getElementById('colorsLabel').textContent = maxColors;
+            
+            document.querySelectorAll('.mode-toggle button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase() === viewMode) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            Promise.all(loadPromises).then(() => {
+                updateLayerPanel();
+                updateControlsForActiveLayer();
+                updateCanvas();
+                isApplyingHistory = false;
+            });
+        }
+        
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                applyState(history[historyIndex]);
+                updateHistoryButtons();
+            }
+        }
+        
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                applyState(history[historyIndex]);
+                updateHistoryButtons();
+            }
+        }
+        
+        function updateHistoryButtons() {
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            const historyInfo = document.getElementById('historyInfo');
+            
+            undoBtn.disabled = historyIndex <= 0;
+            redoBtn.disabled = historyIndex >= history.length - 1;
+            
+            historyInfo.textContent = `History: ${historyIndex + 1} / ${history.length}`;
+        }
+        
+        function init() {
+            mainCanvas = document.getElementById('mainCanvas');
+            previewCanvas = document.getElementById('previewCanvas');
+            mainCtx = mainCanvas.getContext('2d');
+            previewCtx = previewCanvas.getContext('2d');
+            
+            mainCtx.imageSmoothingEnabled = false;
+            previewCtx.imageSmoothingEnabled = false;
+            
+            // Create initial layer
+            const initialLayer = new Layer('Background');
+            layers.push(initialLayer);
+            activeLayerId = initialLayer.id;
+            
+            setupEventListeners();
+            updateLayerPanel();
+            drawGrid(mainCtx);
+            drawGrid(previewCtx);
+            
+            // Save initial state
+            saveState();
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+            document.getElementById('xPos').addEventListener('input', updatePosition);
+            document.getElementById('yPos').addEventListener('input', updatePosition);
+            document.getElementById('scale').addEventListener('input', updateScale);
+            document.getElementById('rotation').addEventListener('input', updateRotation);
+            document.getElementById('maxColors').addEventListener('input', updateMaxColors);
+            document.getElementById('paletteSize').addEventListener('input', updatePaletteSize);
+            
+            // Add change event listeners for saving state
+            document.getElementById('xPos').addEventListener('change', saveState);
+            document.getElementById('yPos').addEventListener('change', saveState);
+            document.getElementById('scale').addEventListener('change', saveState);
+            document.getElementById('rotation').addEventListener('change', saveState);
+            document.getElementById('maxColors').addEventListener('change', saveState);
+            document.getElementById('paletteSize').addEventListener('change', saveState);
+            
+            mainCanvas.addEventListener('mousedown', startDrag);
+            mainCanvas.addEventListener('mousemove', drag);
+            mainCanvas.addEventListener('mouseup', endDrag);
+            mainCanvas.addEventListener('mouseleave', endDrag);
+            
+            // Resize handle events
+            const resizeHandles = document.querySelectorAll('.resize-handle');
+            resizeHandles.forEach(handle => {
+                handle.addEventListener('mousedown', startResize);
+            });
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', endResize);
+            
+            // Project file upload
+            document.getElementById('projectUpload').addEventListener('change', handleProjectUpload);
+            
+            // Palette upload
+            document.getElementById('paletteUpload').addEventListener('change', handlePaletteUpload);
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const cmdKey = isMac ? e.metaKey : e.ctrlKey;
+                
+                if (cmdKey && !e.shiftKey && e.key.toLowerCase() === 'z') {
+                    e.preventDefault();
+                    undo();
+                } else if (cmdKey && e.shiftKey && e.key.toLowerCase() === 'z') {
+                    e.preventDefault();
+                    redo();
+                } else if (cmdKey && e.key.toLowerCase() === 'y') {
+                    e.preventDefault();
+                    redo();
+                } else if (e.key === 'ArrowUp' && e.altKey) {
+                    e.preventDefault();
+                    selectPreviousLayer();
+                } else if (e.key === 'ArrowDown' && e.altKey) {
+                    e.preventDefault();
+                    selectNextLayer();
+                }
+            });
+            
+            // Drag and drop
+            const dropZone = document.getElementById('dropZone');
+            mainCanvas.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('active');
+            });
+            mainCanvas.addEventListener('dragleave', () => {
+                dropZone.classList.remove('active');
+            });
+            mainCanvas.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('active');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    loadImage(file);
+                }
+            });
+        }
+        
+        function getActiveLayer() {
+            return layers.find(layer => layer.id === activeLayerId);
+        }
+        
+        function updateLayerPanel() {
+            const container = document.getElementById('layersContainer');
+            container.innerHTML = '';
+            
+            // Display layers in reverse order (top layer first)
+            [...layers].reverse().forEach((layer, index) => {
+                const layerEl = createLayerElement(layer);
+                container.appendChild(layerEl);
+            });
+            
+            document.getElementById('layerCount').textContent = `Layers: ${layers.length}`;
+            
+            const activeLayer = getActiveLayer();
+            if (activeLayer) {
+                document.getElementById('activeLayerInfo').textContent = `Active: ${activeLayer.name}`;
+            }
+        }
+        
+        function createLayerElement(layer) {
+            const div = document.createElement('div');
+            div.className = 'layer-item' + (layer.id === activeLayerId ? ' active' : '');
+            div.dataset.layerId = layer.id;
+            div.draggable = true;
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'layer-header';
+            
+            // Visibility toggle
+            const visBtn = document.createElement('button');
+            visBtn.className = 'layer-visibility' + (layer.visible ? ' visible' : '');
+            visBtn.innerHTML = layer.visible ? 
+                '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>' :
+                '<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>';
+            visBtn.onclick = (e) => {
+                e.stopPropagation();
+                layer.visible = !layer.visible;
+                visBtn.classList.toggle('visible');
+                visBtn.innerHTML = layer.visible ? 
+                    '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>' :
+                    '<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>';
+                updateCanvas();
+                saveState();
+            };
+            header.appendChild(visBtn);
+            
+            // Lock toggle
+            const lockBtn = document.createElement('button');
+            lockBtn.className = 'layer-lock' + (layer.locked ? ' locked' : '');
+            lockBtn.innerHTML = layer.locked ? 
+                '<svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>' :
+                '<svg viewBox="0 0 24 24"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/></svg>';
+            lockBtn.onclick = (e) => {
+                e.stopPropagation();
+                layer.locked = !layer.locked;
+                lockBtn.classList.toggle('locked');
+                lockBtn.innerHTML = layer.locked ? 
+                    '<svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>' :
+                    '<svg viewBox="0 0 24 24"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/></svg>';
+                if (layer.id === activeLayerId) {
+                    updateControlsForActiveLayer();
+                }
+                saveState();
+            };
+            header.appendChild(lockBtn);
+            
+            // Thumbnail
+            const thumb = document.createElement('canvas');
+            thumb.className = 'layer-thumbnail';
+            thumb.width = 40;
+            thumb.height = 40;
+            const thumbCtx = thumb.getContext('2d');
+            thumbCtx.drawImage(layer.thumbnail, 0, 0);
+            header.appendChild(thumb);
+            
+            // Name
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.className = 'layer-name';
+            nameInput.value = layer.name;
+            nameInput.onclick = (e) => e.stopPropagation();
+            nameInput.onchange = (e) => {
+                layer.name = e.target.value;
+                if (layer.id === activeLayerId) {
+                    document.getElementById('activeLayerInfo').textContent = `Active: ${layer.name}`;
+                }
+                saveState();
+            };
+            header.appendChild(nameInput);
+            
+            div.appendChild(header);
+            
+            // Settings
+            const settings = document.createElement('div');
+            settings.className = 'layer-settings';
+            
+            // Opacity
+            const opacityDiv = document.createElement('div');
+            opacityDiv.className = 'opacity-slider';
+            opacityDiv.innerHTML = '<span>Opacity:</span>';
+            const opacitySlider = document.createElement('input');
+            opacitySlider.type = 'range';
+            opacitySlider.min = '0';
+            opacitySlider.max = '100';
+            opacitySlider.value = layer.opacity * 100;
+            opacitySlider.onclick = (e) => e.stopPropagation();
+            opacitySlider.oninput = (e) => {
+                layer.opacity = e.target.value / 100;
+                opacityValue.textContent = e.target.value + '%';
+                updateCanvas();
+            };
+            opacitySlider.onchange = saveState;
+            opacityDiv.appendChild(opacitySlider);
+            const opacityValue = document.createElement('span');
+            opacityValue.className = 'opacity-value';
+            opacityValue.textContent = Math.round(layer.opacity * 100) + '%';
+            opacityDiv.appendChild(opacityValue);
+            settings.appendChild(opacityDiv);
+            
+            div.appendChild(settings);
+            
+            // Click to select
+            div.onclick = () => selectLayer(layer.id);
+            
+            // Drag and drop
+            div.ondragstart = (e) => {
+                draggedLayer = layer;
+                e.dataTransfer.effectAllowed = 'move';
+                div.classList.add('dragging');
+            };
+            
+            div.ondragend = () => {
+                div.classList.remove('dragging');
+                draggedLayer = null;
+            };
+            
+            div.ondragover = (e) => {
+                e.preventDefault();
+                if (draggedLayer && draggedLayer.id !== layer.id) {
+                    div.classList.add('drag-over');
+                }
+            };
+            
+            div.ondragleave = () => {
+                div.classList.remove('drag-over');
+            };
+            
+            div.ondrop = (e) => {
+                e.preventDefault();
+                div.classList.remove('drag-over');
+                
+                if (draggedLayer && draggedLayer.id !== layer.id) {
+                    const fromIndex = layers.findIndex(l => l.id === draggedLayer.id);
+                    const toIndex = layers.findIndex(l => l.id === layer.id);
+                    
+                    layers.splice(fromIndex, 1);
+                    layers.splice(toIndex, 0, draggedLayer);
+                    
+                    updateLayerPanel();
+                    updateCanvas();
+                    saveState();
+                }
+            };
+            
+            return div;
+        }
+        
+        function selectLayer(layerId) {
+            activeLayerId = layerId;
+            updateLayerPanel();
+            updateControlsForActiveLayer();
+            updateCanvas();
+        }
+        
+        function selectPreviousLayer() {
+            const currentIndex = layers.findIndex(l => l.id === activeLayerId);
+            if (currentIndex > 0) {
+                selectLayer(layers[currentIndex - 1].id);
+            }
+        }
+        
+        function selectNextLayer() {
+            const currentIndex = layers.findIndex(l => l.id === activeLayerId);
+            if (currentIndex < layers.length - 1) {
+                selectLayer(layers[currentIndex + 1].id);
+            }
+        }
+        
+        function updateControlsForActiveLayer() {
+            const layer = getActiveLayer();
+            if (!layer) return;
+            
+            // Update position controls
+            document.getElementById('xPos').value = layer.imageX;
+            document.getElementById('yPos').value = layer.imageY;
+            document.getElementById('xPosLabel').textContent = layer.imageX;
+            document.getElementById('yPosLabel').textContent = layer.imageY;
+            
+            // Update scale
+            document.getElementById('scale').value = layer.imageScale * 100;
+            document.getElementById('scaleLabel').textContent = Math.round(layer.imageScale * 100) + '%';
+            
+            // Update rotation
+            document.getElementById('rotation').value = layer.imageRotation;
+            document.getElementById('rotationLabel').textContent = layer.imageRotation + '°';
+            
+            // Enable/disable controls based on lock state
+            const controls = ['xPos', 'yPos', 'scale', 'rotation', 'imageUpload'];
+            controls.forEach(id => {
+                document.getElementById(id).disabled = layer.locked;
+            });
+            
+            // Update buttons
+            document.querySelectorAll('.control-group button').forEach(btn => {
+                if (!btn.classList.contains('danger') && !btn.classList.contains('primary')) {
+                    btn.disabled = layer.locked;
+                }
+            });
+        }
+        
+        function addLayer() {
+            if (layers.length >= MAX_LAYERS) {
+                alert(`Maximum of ${MAX_LAYERS} layers reached`);
+                return;
+            }
+            
+            const newLayer = new Layer();
+            layers.push(newLayer);
+            activeLayerId = newLayer.id;
+            
+            updateLayerPanel();
+            updateControlsForActiveLayer();
+            updateCanvas();
+            saveState();
+        }
+        
+        function duplicateLayer() {
+            const sourceLayer = getActiveLayer();
+            if (!sourceLayer || layers.length >= MAX_LAYERS) return;
+            
+            const newLayer = new Layer(sourceLayer.name + ' copy');
+            
+            // Copy properties
+            newLayer.visible = sourceLayer.visible;
+            newLayer.opacity = sourceLayer.opacity;
+            newLayer.imageX = sourceLayer.imageX;
+            newLayer.imageY = sourceLayer.imageY;
+            newLayer.imageScale = sourceLayer.imageScale;
+            newLayer.imageRotation = sourceLayer.imageRotation;
+            newLayer.flipH = sourceLayer.flipH;
+            newLayer.flipV = sourceLayer.flipV;
+            
+            // Copy image
+            if (sourceLayer.image) {
+                newLayer.image = new Image();
+                newLayer.image.src = sourceLayer.image.src;
+                newLayer.image.onload = () => {
+                    newLayer.updateThumbnail();
+                    updateLayerPanel();
+                    updateCanvas();
+                };
+            }
+            
+            // Insert after current layer
+            const currentIndex = layers.findIndex(l => l.id === sourceLayer.id);
+            layers.splice(currentIndex + 1, 0, newLayer);
+            activeLayerId = newLayer.id;
+            
+            updateLayerPanel();
+            updateControlsForActiveLayer();
+            saveState();
+        }
+        
+        function deleteLayer() {
+            if (layers.length <= 1) {
+                alert('Cannot delete the last layer');
+                return;
+            }
+            
+            const layerIndex = layers.findIndex(l => l.id === activeLayerId);
+            layers.splice(layerIndex, 1);
+            
+            // Select adjacent layer
+            if (layerIndex >= layers.length) {
+                activeLayerId = layers[layers.length - 1].id;
+            } else {
+                activeLayerId = layers[layerIndex].id;
+            }
+            
+            updateLayerPanel();
+            updateControlsForActiveLayer();
+            updateCanvas();
+            saveState();
+        }
+        
+        function mergeDown() {
+            const currentIndex = layers.findIndex(l => l.id === activeLayerId);
+            if (currentIndex >= layers.length - 1) {
+                alert('No layer below to merge with');
+                return;
+            }
+            
+            const currentLayer = layers[currentIndex];
+            const belowLayer = layers[currentIndex + 1];
+            
+            // Create temporary canvas to merge layers
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = CANVAS_WIDTH;
+            tempCanvas.height = CANVAS_HEIGHT;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw below layer
+            if (belowLayer.visible && belowLayer.image) {
+                tempCtx.save();
+                tempCtx.globalAlpha = belowLayer.opacity;
+                drawLayerToContext(belowLayer, tempCtx);
+                tempCtx.restore();
+            }
+            
+            // Draw current layer
+            if (currentLayer.visible && currentLayer.image) {
+                tempCtx.save();
+                tempCtx.globalAlpha = currentLayer.opacity;
+                drawLayerToContext(currentLayer, tempCtx);
+                tempCtx.restore();
+            }
+            
+            // Convert merged result to image
+            const mergedImage = new Image();
+            mergedImage.onload = () => {
+                // Update below layer with merged content
+                belowLayer.image = mergedImage;
+                belowLayer.imageX = 0;
+                belowLayer.imageY = 0;
+                belowLayer.imageScale = 1;
+                belowLayer.imageRotation = 0;
+                belowLayer.flipH = false;
+                belowLayer.flipV = false;
+                belowLayer.opacity = 1;
+                belowLayer.updateThumbnail();
+                
+                // Remove current layer
+                layers.splice(currentIndex, 1);
+                activeLayerId = belowLayer.id;
+                
+                updateLayerPanel();
+                updateControlsForActiveLayer();
+                updateCanvas();
+                saveState();
+            };
+            mergedImage.src = tempCanvas.toDataURL();
+        }
+        
+        function drawLayerToContext(layer, ctx) {
+            if (!layer.image) return;
+            
+            const scaledWidth = layer.image.width * layer.imageScale;
+            const scaledHeight = layer.image.height * layer.imageScale;
+            
+            ctx.save();
+            ctx.translate(CANVAS_WIDTH / 2 + layer.imageX, CANVAS_HEIGHT / 2 + layer.imageY);
+            ctx.rotate(layer.imageRotation * Math.PI / 180);
+            if (layer.flipH) ctx.scale(-1, 1);
+            if (layer.flipV) ctx.scale(1, -1);
+            
+            ctx.drawImage(
+                layer.image,
+                -scaledWidth / 2,
+                -scaledHeight / 2,
+                scaledWidth,
+                scaledHeight
+            );
+            ctx.restore();
+        }
+        
+        function drawGrid(ctx, alpha = 0.3, skipClear = false) {
+            if (!skipClear) {
+                ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            }
+            
+            if (viewMode === 'grid') {
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.lineWidth = 0.5;
+                
+                for (let x = 0; x <= GRID_WIDTH; x++) {
+                    ctx.beginPath();
+                    ctx.moveTo(x * CELL_SIZE, 0);
+                    ctx.lineTo(x * CELL_SIZE, CANVAS_HEIGHT);
+                    ctx.stroke();
+                }
+                
+                for (let y = 0; y <= GRID_HEIGHT; y++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y * CELL_SIZE);
+                    ctx.lineTo(CANVAS_WIDTH, y * CELL_SIZE);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                loadImage(file);
+            }
+        }
+        
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const layer = getActiveLayer();
+                    if (layer && !layer.locked) {
+                        layer.image = img;
+                        layer.updateThumbnail();
+                        updateLayerPanel();
+                        updateCanvas();
+                        saveState();
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function updateCanvas() {
+            if (!layers.length) return;
+            
+            // Clear and draw grid
+            drawGrid(mainCtx);
+            
+            // Draw all visible layers
+            layers.forEach(layer => {
+                if (layer.visible && layer.image) {
+                    mainCtx.save();
+                    mainCtx.globalAlpha = layer.opacity;
+                    
+                    drawLayerToContext(layer, mainCtx);
+                    
+                    mainCtx.restore();
+                }
+            });
+            
+            // Update resize handles for active layer
+            const activeLayer = getActiveLayer();
+            if (activeLayer && activeLayer.image && !activeLayer.locked) {
+                updateResizeHandles();
+                updateTransformOrigin();
+            } else {
+                document.getElementById('resizeHandles').classList.remove('active');
+                document.getElementById('transformOrigin').classList.remove('active');
+            }
+            
+            // Update pixelated preview
+            updatePixelatedPreview();
+        }
+        
+        function updateResizeHandles() {
+            const layer = getActiveLayer();
+            const handles = document.getElementById('resizeHandles');
+            const transformOrigin = document.getElementById('transformOrigin');
+            
+            if (!layer || !layer.image || layer.locked) {
+                handles.classList.remove('active');
+                transformOrigin.classList.remove('active');
+                return;
+            }
+            
+            handles.classList.add('active');
+            
+            const scaledWidth = layer.image.width * layer.imageScale;
+            const scaledHeight = layer.image.height * layer.imageScale;
+            
+            const centerX = CANVAS_WIDTH / 2 + layer.imageX;
+            const centerY = CANVAS_HEIGHT / 2 + layer.imageY;
+            const angle = layer.imageRotation * Math.PI / 180;
+            
+            imageBounds = {
+                centerX,
+                centerY,
+                width: scaledWidth,
+                height: scaledHeight,
+                angle
+            };
+            
+            const corners = [
+                { x: -scaledWidth/2, y: -scaledHeight/2 },
+                { x: scaledWidth/2, y: -scaledHeight/2 },
+                { x: -scaledWidth/2, y: scaledHeight/2 },
+                { x: scaledWidth/2, y: scaledHeight/2 }
+            ];
+            
+            const rotatedCorners = corners.map(corner => {
+                const rotX = corner.x * Math.cos(angle) - corner.y * Math.sin(angle);
+                const rotY = corner.x * Math.sin(angle) + corner.y * Math.cos(angle);
+                return {
+                    x: centerX + rotX,
+                    y: centerY + rotY
+                };
+            });
+            
+            const handleElements = handles.querySelectorAll('.resize-handle');
+            handleElements[0].style.left = rotatedCorners[0].x - 6 + 'px';
+            handleElements[0].style.top = rotatedCorners[0].y - 6 + 'px';
+            handleElements[1].style.left = rotatedCorners[1].x - 6 + 'px';
+            handleElements[1].style.top = rotatedCorners[1].y - 6 + 'px';
+            handleElements[2].style.left = rotatedCorners[2].x - 6 + 'px';
+            handleElements[2].style.top = rotatedCorners[2].y - 6 + 'px';
+            handleElements[3].style.left = rotatedCorners[3].x - 6 + 'px';
+            handleElements[3].style.top = rotatedCorners[3].y - 6 + 'px';
+            
+            const midpoints = [
+                { x: (rotatedCorners[0].x + rotatedCorners[1].x) / 2, y: (rotatedCorners[0].y + rotatedCorners[1].y) / 2 },
+                { x: (rotatedCorners[1].x + rotatedCorners[3].x) / 2, y: (rotatedCorners[1].y + rotatedCorners[3].y) / 2 },
+                { x: (rotatedCorners[2].x + rotatedCorners[3].x) / 2, y: (rotatedCorners[2].y + rotatedCorners[3].y) / 2 },
+                { x: (rotatedCorners[0].x + rotatedCorners[2].x) / 2, y: (rotatedCorners[0].y + rotatedCorners[2].y) / 2 }
+            ];
+            
+            handleElements[4].style.left = midpoints[0].x - 6 + 'px';
+            handleElements[4].style.top = midpoints[0].y - 6 + 'px';
+            handleElements[5].style.left = midpoints[1].x - 6 + 'px';
+            handleElements[5].style.top = midpoints[1].y - 6 + 'px';
+            handleElements[6].style.left = midpoints[2].x - 6 + 'px';
+            handleElements[6].style.top = midpoints[2].y - 6 + 'px';
+            handleElements[7].style.left = midpoints[3].x - 6 + 'px';
+            handleElements[7].style.top = midpoints[3].y - 6 + 'px';
+        }
+        
+        function updateTransformOrigin() {
+            const layer = getActiveLayer();
+            const origin = document.getElementById('transformOrigin');
+            
+            if (!layer || !layer.image || layer.locked) {
+                origin.classList.remove('active');
+                return;
+            }
+            
+            origin.classList.add('active');
+            origin.style.left = (CANVAS_WIDTH / 2 + layer.imageX - 10) + 'px';
+            origin.style.top = (CANVAS_HEIGHT / 2 + layer.imageY - 10) + 'px';
+        }
+        
+        function updatePixelatedPreview() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = CANVAS_WIDTH;
+            tempCanvas.height = CANVAS_HEIGHT;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw all layers to temp canvas
+            layers.forEach(layer => {
+                if (layer.visible && layer.image) {
+                    tempCtx.save();
+                    tempCtx.globalAlpha = layer.opacity;
+                    drawLayerToContext(layer, tempCtx);
+                    tempCtx.restore();
+                }
+            });
+            
+            // Get image data and reduce colors
+            const imageData = tempCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            const reducedData = reduceColors(imageData, selectedColorCount);
+            
+            // Draw to preview canvas
+            previewCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            previewCtx.putImageData(reducedData, 0, 0);
+            drawGrid(previewCtx, 0.3, true);
+            
+            // Update color palette
+            updateColorPalette(reducedData);
+        }
+        
+        // Helper function to convert RGB to HSL
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            
+            return { h: h * 360, s: s * 100, l: l * 100 };
+        }
+        
+        // Calculate perceptual color distance
+        function colorDistance(c1, c2) {
+            // Using weighted Euclidean distance in RGB space
+            // Human eye is more sensitive to green, then red, then blue
+            const rMean = (c1.r + c2.r) / 2;
+            const deltaR = c1.r - c2.r;
+            const deltaG = c1.g - c2.g;
+            const deltaB = c1.b - c2.b;
+            
+            const weightR = 2 + rMean / 256;
+            const weightG = 4;
+            const weightB = 2 + (255 - rMean) / 256;
+            
+            return Math.sqrt(
+                weightR * deltaR * deltaR +
+                weightG * deltaG * deltaG +
+                weightB * deltaB * deltaB
+            );
+        }
+        
+        function reduceColors(imageData, maxColors) {
+            const data = imageData.data;
+            const colorMap = new Map();
+            
+            // Collect unique colors with their frequency
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+                
+                if (a > 0) {
+                    const key = `${r},${g},${b}`;
+                    if (!colorMap.has(key)) {
+                        const hsl = rgbToHsl(r, g, b);
+                        colorMap.set(key, { r, g, b, count: 0, h: hsl.h, s: hsl.s, l: hsl.l });
+                    }
+                    colorMap.get(key).count++;
+                }
+            }
+            
+            const allColors = Array.from(colorMap.values());
+            
+            // If this is the first time, create a diverse palette
+            if (colorPalette.length === 0) {
+                // Group similar colors together
+                const colorGroups = [];
+                const used = new Set();
+                
+                for (const color of allColors) {
+                    if (used.has(`${color.r},${color.g},${color.b}`)) continue;
+                    
+                    const group = [color];
+                    used.add(`${color.r},${color.g},${color.b}`);
+                    
+                    // Find all colors similar to this one
+                    for (const otherColor of allColors) {
+                        const key = `${otherColor.r},${otherColor.g},${otherColor.b}`;
+                        if (!used.has(key)) {
+                            const dist = colorDistance(color, otherColor);
+                            // Group colors within a threshold distance
+                            if (dist < 50) {
+                                group.push(otherColor);
+                                used.add(key);
+                            }
+                        }
+                    }
+                    
+                    // Sort group by count and pick the most frequent as representative
+                    group.sort((a, b) => b.count - a.count);
+                    colorGroups.push({
+                        representative: group[0],
+                        totalCount: group.reduce((sum, c) => sum + c.count, 0),
+                        avgSaturation: group.reduce((sum, c) => sum + c.s, 0) / group.length,
+                        avgHue: group[0].h // Use first color's hue as representative
+                    });
+                }
+                
+                // Sort groups to prioritize:
+                // 1. High saturation (colorful) over low saturation (grays)
+                // 2. Then by total pixel count
+                colorGroups.sort((a, b) => {
+                    // If one is colorful and other is gray, prioritize colorful
+                    const aIsGray = a.avgSaturation < 10;
+                    const bIsGray = b.avgSaturation < 10;
+                    
+                    if (aIsGray !== bIsGray) {
+                        return aIsGray ? 1 : -1;
+                    }
+                    
+                    // If both are colorful, sort by hue diversity then count
+                    if (!aIsGray && !bIsGray) {
+                        // This ensures we get a variety of hues
+                        const hueDiff = Math.abs(a.avgHue - b.avgHue);
+                        if (hueDiff > 30) {
+                            return b.totalCount - a.totalCount;
+                        }
+                    }
+                    
+                    return b.totalCount - a.totalCount;
+                });
+                
+                // Build palette from group representatives
+                colorPalette = colorGroups
+                    .slice(0, Math.min(maxPaletteSize, colorGroups.length))
+                    .map(g => g.representative);
+                    
+                selectedColorCount = Math.min(maxColors, colorPalette.length);
+            } else {
+                // Update existing palette
+                const existingColorKeys = new Set(colorPalette.map(c => `${c.r},${c.g},${c.b}`));
+                const currentColorKeys = new Set(Array.from(colorMap.keys()));
+                
+                // Remove colors no longer in image
+                colorPalette = colorPalette.filter(c => currentColorKeys.has(`${c.r},${c.g},${c.b}`));
+                
+                // Update count information
+                colorPalette = colorPalette.map(c => {
+                    const key = `${c.r},${c.g},${c.b}`;
+                    return colorMap.has(key) ? colorMap.get(key) : c;
+                });
+                
+                // Add new distinct colors if needed
+                const newColors = allColors.filter(c => {
+                    const key = `${c.r},${c.g},${c.b}`;
+                    if (existingColorKeys.has(key)) return false;
+                    
+                    // Only add if it's sufficiently different from existing colors
+                    for (const existing of colorPalette) {
+                        if (colorDistance(c, existing) < 50) return false;
+                    }
+                    return true;
+                });
+                
+                // Sort new colors by saturation and count
+                newColors.sort((a, b) => {
+                    const aIsGray = a.s < 10;
+                    const bIsGray = b.s < 10;
+                    if (aIsGray !== bIsGray) return aIsGray ? 1 : -1;
+                    return b.count - a.count;
+                });
+                
+                if (newColors.length > 0) {
+                    colorPalette = [...colorPalette, ...newColors].slice(0, maxPaletteSize);
+                }
+                
+                selectedColorCount = Math.min(selectedColorCount, colorPalette.length);
+                selectedColorCount = Math.max(1, selectedColorCount);
+            }
+            
+            // Use only the selected colors (leftmost in palette)
+            const selectedColors = colorPalette.slice(0, selectedColorCount);
+            
+            // Create reduced image data
+            const reducedData = new ImageData(CANVAS_WIDTH, CANVAS_HEIGHT);
+            const reduced = reducedData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] === 0) {
+                    reduced[i + 3] = 0;
+                    continue;
+                }
+                
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // Find closest color from selected colors
+                let minDist = Infinity;
+                let closest = selectedColors[0];
+                
+                for (const color of selectedColors) {
+                    const dist = colorDistance({r, g, b}, color);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closest = color;
+                    }
+                }
+                
+                reduced[i] = closest.r;
+                reduced[i + 1] = closest.g;
+                reduced[i + 2] = closest.b;
+                reduced[i + 3] = 255;
+            }
+            
+            return reducedData;
+        }
+        
+        function updateColorPalette(imageData) {
+            const paletteDiv = document.getElementById('colorPalette');
+            paletteDiv.innerHTML = '';
+            
+            // Ensure we have the right selected color count
+            selectedColorCount = Math.min(selectedColorCount, colorPalette.length);
+            selectedColorCount = Math.max(1, selectedColorCount);
+            
+            colorPalette.forEach((color, index) => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+                swatch.title = `RGB(${color.r}, ${color.g}, ${color.b})`;
+                swatch.draggable = true;
+                swatch.dataset.colorIndex = index;
+                
+                // Drag events
+                swatch.ondragstart = (e) => {
+                    draggedColor = { color, index };
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', index); // Required for Firefox
+                    swatch.classList.add('dragging');
+                };
+                
+                swatch.ondragend = (e) => {
+                    e.preventDefault();
+                    swatch.classList.remove('dragging');
+                    // Clear all drag-over states
+                    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('drag-over'));
+                    draggedColor = null;
+                };
+                
+                swatch.ondragover = (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (draggedColor && draggedColor.index !== index) {
+                        swatch.classList.add('drag-over');
+                    }
+                };
+                
+                swatch.ondragleave = (e) => {
+                    e.preventDefault();
+                    swatch.classList.remove('drag-over');
+                };
+                
+                swatch.ondrop = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    swatch.classList.remove('drag-over');
+                    
+                    if (draggedColor && draggedColor.index !== index) {
+                        // Reorder colors
+                        const fromIndex = draggedColor.index;
+                        const toIndex = index;
+                        
+                        // Create a new array to avoid mutation issues
+                        const newPalette = [...colorPalette];
+                        const movedColor = newPalette.splice(fromIndex, 1)[0];
+                        newPalette.splice(toIndex, 0, movedColor);
+                        colorPalette = newPalette;
+                        
+                        // Update display and canvas
+                        updateColorPalette();
+                        updateCanvas();
+                        saveState();
+                    }
+                };
+                
+                paletteDiv.appendChild(swatch);
+                
+                // Add divider after selected colors
+                if (index === selectedColorCount - 1 && index < colorPalette.length - 1) {
+                    const divider = document.createElement('div');
+                    divider.className = 'color-divider';
+                    divider.title = 'Drag to adjust number of colors to keep';
+                    
+                    let isDraggingDivider = false;
+                    let startX = 0;
+                    let startCount = selectedColorCount;
+                    
+                    divider.onmousedown = (e) => {
+                        isDraggingDivider = true;
+                        startX = e.clientX;
+                        startCount = selectedColorCount;
+                        e.preventDefault();
+                    };
+                    
+                    // Only attach document-level handlers once
+                    if (!dividerHandlersAttached) {
+                        dividerHandlersAttached = true;
+                        
+                        document.addEventListener('mousemove', (e) => {
+                            if (isDraggingDivider) {
+                                const delta = Math.floor((e.clientX - startX) / 35); // 35px per color
+                                const newCount = Math.max(1, Math.min(colorPalette.length, startCount + delta));
+                                if (newCount !== selectedColorCount) {
+                                    selectedColorCount = newCount;
+                                    updateColorPalette();
+                                    updateCanvas();
+                                }
+                            }
+                        });
+                        
+                        document.addEventListener('mouseup', () => {
+                            if (isDraggingDivider) {
+                                isDraggingDivider = false;
+                                saveState();
+                            }
+                        });
+                    }
+                    
+                    paletteDiv.appendChild(divider);
+                }
+            });
+            
+            document.getElementById('colorCount').textContent = `Colors Used: ${selectedColorCount} / ${colorPalette.length}`;
+            
+            // Update max colors slider to match selected count
+            document.getElementById('maxColors').value = selectedColorCount;
+            document.getElementById('colorsLabel').textContent = selectedColorCount;
+        }
+        
+        function updatePosition() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.imageX = parseInt(document.getElementById('xPos').value);
+            layer.imageY = parseInt(document.getElementById('yPos').value);
+            
+            document.getElementById('xPosLabel').textContent = layer.imageX;
+            document.getElementById('yPosLabel').textContent = layer.imageY;
+            
+            updateCanvas();
+        }
+        
+        function updateScale() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.imageScale = parseInt(document.getElementById('scale').value) / 100;
+            document.getElementById('scaleLabel').textContent = Math.round(layer.imageScale * 100) + '%';
+            
+            updateCanvas();
+        }
+        
+        function updateRotation() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.imageRotation = parseInt(document.getElementById('rotation').value);
+            document.getElementById('rotationLabel').textContent = layer.imageRotation + '°';
+            
+            updateCanvas();
+        }
+        
+        function updateMaxColors() {
+            selectedColorCount = parseInt(document.getElementById('maxColors').value);
+            selectedColorCount = Math.min(selectedColorCount, colorPalette.length);
+            selectedColorCount = Math.max(1, selectedColorCount);
+            document.getElementById('colorsLabel').textContent = selectedColorCount;
+            updateColorPalette();
+            updateCanvas();
+        }
+        
+        function updatePaletteSize() {
+            maxPaletteSize = parseInt(document.getElementById('paletteSize').value);
+            document.getElementById('paletteSizeLabel').textContent = maxPaletteSize;
+            
+            // Trim palette if it's too large
+            if (colorPalette.length > maxPaletteSize) {
+                colorPalette = colorPalette.slice(0, maxPaletteSize);
+                selectedColorCount = Math.min(selectedColorCount, colorPalette.length);
+                updateColorPalette();
+                updateCanvas();
+            }
+        }
+        
+        function startDrag(e) {
+            const layer = getActiveLayer();
+            if (!layer || !layer.image || layer.locked) return;
+            
+            const rect = mainCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Check if click is within image bounds
+            const ctx = mainCanvas.getContext('2d');
+            ctx.save();
+            ctx.translate(CANVAS_WIDTH / 2 + layer.imageX, CANVAS_HEIGHT / 2 + layer.imageY);
+            ctx.rotate(layer.imageRotation * Math.PI / 180);
+            
+            const halfWidth = layer.image.width * layer.imageScale / 2;
+            const halfHeight = layer.image.height * layer.imageScale / 2;
+            
+            const localX = (x - CANVAS_WIDTH / 2 - layer.imageX) * Math.cos(-layer.imageRotation * Math.PI / 180) - 
+                          (y - CANVAS_HEIGHT / 2 - layer.imageY) * Math.sin(-layer.imageRotation * Math.PI / 180);
+            const localY = (x - CANVAS_WIDTH / 2 - layer.imageX) * Math.sin(-layer.imageRotation * Math.PI / 180) + 
+                          (y - CANVAS_HEIGHT / 2 - layer.imageY) * Math.cos(-layer.imageRotation * Math.PI / 180);
+            
+            ctx.restore();
+            
+            if (Math.abs(localX) <= halfWidth && Math.abs(localY) <= halfHeight) {
+                isDragging = true;
+                dragStartX = x - layer.imageX;
+                dragStartY = y - layer.imageY;
+                mainCanvas.style.cursor = 'grabbing';
+            }
+        }
+        
+        function drag(e) {
+            if (!isDragging) return;
+            
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            const rect = mainCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            layer.imageX = x - dragStartX;
+            layer.imageY = y - dragStartY;
+            
+            document.getElementById('xPos').value = layer.imageX;
+            document.getElementById('yPos').value = layer.imageY;
+            document.getElementById('xPosLabel').textContent = layer.imageX;
+            document.getElementById('yPosLabel').textContent = layer.imageY;
+            
+            updateCanvas();
+        }
+        
+        function endDrag() {
+            if (isDragging) {
+                isDragging = false;
+                mainCanvas.style.cursor = 'move';
+                saveState();
+            }
+        }
+        
+        function startResize(e) {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            e.preventDefault();
+            isResizing = true;
+            resizeHandle = e.target.dataset.handle;
+            resizeStartX = e.clientX;
+            resizeStartY = e.clientY;
+            resizeStartScale = layer.imageScale;
+            resizeStartWidth = layer.image.width * layer.imageScale;
+            resizeStartHeight = layer.image.height * layer.imageScale;
+        }
+        
+        function resize(e) {
+            if (!isResizing || !resizeHandle) return;
+            
+            const layer = getActiveLayer();
+            if (!layer || !layer.image || layer.locked) return;
+            
+            const deltaX = e.clientX - resizeStartX;
+            const deltaY = e.clientY - resizeStartY;
+            
+            let newScale = resizeStartScale;
+            
+            switch (resizeHandle) {
+                case 'top-left':
+                case 'bottom-right':
+                    const diagonal = Math.sqrt(deltaX * deltaX + deltaY * deltaY) * (deltaX > 0 ? 1 : -1);
+                    newScale = resizeStartScale + (diagonal / layer.image.width);
+                    break;
+                case 'top-right':
+                case 'bottom-left':
+                    const diagonal2 = Math.sqrt(deltaX * deltaX + deltaY * deltaY) * (deltaX < 0 ? 1 : -1);
+                    newScale = resizeStartScale + (diagonal2 / layer.image.width);
+                    break;
+                case 'left':
+                case 'right':
+                    newScale = resizeStartScale + ((resizeHandle === 'right' ? deltaX : -deltaX) / layer.image.width);
+                    break;
+                case 'top':
+                case 'bottom':
+                    newScale = resizeStartScale + ((resizeHandle === 'bottom' ? deltaY : -deltaY) / layer.image.height);
+                    break;
+            }
+            
+            newScale = Math.max(0.1, Math.min(3, newScale));
+            layer.imageScale = newScale;
+            
+            document.getElementById('scale').value = Math.round(newScale * 100);
+            document.getElementById('scaleLabel').textContent = Math.round(newScale * 100) + '%';
+            
+            updateCanvas();
+        }
+        
+        function endResize() {
+            if (isResizing) {
+                isResizing = false;
+                resizeHandle = null;
+                saveState();
+            }
+        }
+        
+        function clearImage() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.image = null;
+            layer.updateThumbnail();
+            updateLayerPanel();
+            updateCanvas();
+            saveState();
+        }
+        
+        function fitToWidth() {
+            const layer = getActiveLayer();
+            if (!layer || !layer.image || layer.locked) return;
+            
+            layer.imageScale = CANVAS_WIDTH / layer.image.width;
+            layer.imageX = 0;
+            
+            document.getElementById('scale').value = Math.round(layer.imageScale * 100);
+            document.getElementById('scaleLabel').textContent = Math.round(layer.imageScale * 100) + '%';
+            document.getElementById('xPos').value = 0;
+            document.getElementById('xPosLabel').textContent = '0';
+            
+            updateCanvas();
+            saveState();
+        }
+        
+        function fitToHeight() {
+            const layer = getActiveLayer();
+            if (!layer || !layer.image || layer.locked) return;
+            
+            layer.imageScale = CANVAS_HEIGHT / layer.image.height;
+            layer.imageY = 0;
+            
+            document.getElementById('scale').value = Math.round(layer.imageScale * 100);
+            document.getElementById('scaleLabel').textContent = Math.round(layer.imageScale * 100) + '%';
+            document.getElementById('yPos').value = 0;
+            document.getElementById('yPosLabel').textContent = '0';
+            
+            updateCanvas();
+            saveState();
+        }
+        
+        function centerHorizontal() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.imageX = 0;
+            document.getElementById('xPos').value = 0;
+            document.getElementById('xPosLabel').textContent = '0';
+            
+            updateCanvas();
+            saveState();
+        }
+        
+        function centerVertical() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.imageY = 0;
+            document.getElementById('yPos').value = 0;
+            document.getElementById('yPosLabel').textContent = '0';
+            
+            updateCanvas();
+            saveState();
+        }
+        
+        function rotateImage(degrees) {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.imageRotation = (layer.imageRotation + degrees) % 360;
+            if (layer.imageRotation < -180) layer.imageRotation += 360;
+            if (layer.imageRotation > 180) layer.imageRotation -= 360;
+            
+            document.getElementById('rotation').value = layer.imageRotation;
+            document.getElementById('rotationLabel').textContent = layer.imageRotation + '°';
+            
+            updateCanvas();
+            saveState();
+        }
+        
+        function flipHorizontal() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.flipH = !layer.flipH;
+            updateCanvas();
+            saveState();
+        }
+        
+        function flipVertical() {
+            const layer = getActiveLayer();
+            if (!layer || layer.locked) return;
+            
+            layer.flipV = !layer.flipV;
+            updateCanvas();
+            saveState();
+        }
+        
+        function setViewMode(mode) {
+            viewMode = mode;
+            document.querySelectorAll('.mode-toggle button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            updateCanvas();
+            saveState();
+        }
+        
+        function exportDesign() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = CANVAS_WIDTH;
+            tempCanvas.height = CANVAS_HEIGHT;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw final composite
+            layers.forEach(layer => {
+                if (layer.visible && layer.image) {
+                    tempCtx.save();
+                    tempCtx.globalAlpha = layer.opacity;
+                    drawLayerToContext(layer, tempCtx);
+                    tempCtx.restore();
+                }
+            });
+            
+            // Apply color reduction
+            const imageData = tempCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            const reducedData = reduceColors(imageData, selectedColorCount);
+            tempCtx.putImageData(reducedData, 0, 0);
+            
+            // Download
+            const link = document.createElement('a');
+            link.download = 'sock-design.png';
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        }
+        
+        function exportLayer() {
+            const layer = getActiveLayer();
+            if (!layer || !layer.image) {
+                alert('No image in current layer to export');
+                return;
+            }
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = CANVAS_WIDTH;
+            tempCanvas.height = CANVAS_HEIGHT;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.save();
+            drawLayerToContext(layer, tempCtx);
+            tempCtx.restore();
+            
+            const link = document.createElement('a');
+            link.download = `${layer.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        }
+        
+        function exportAllLayers() {
+            layers.forEach((layer, index) => {
+                if (layer.image) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = CANVAS_WIDTH;
+                    tempCanvas.height = CANVAS_HEIGHT;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    tempCtx.save();
+                    drawLayerToContext(layer, tempCtx);
+                    tempCtx.restore();
+                    
+                    const link = document.createElement('a');
+                    link.download = `layer-${index + 1}-${layer.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+                    link.href = tempCanvas.toDataURL();
+                    
+                    // Delay clicks to avoid browser blocking multiple downloads
+                    setTimeout(() => link.click(), index * 200);
+                }
+            });
+        }
+        
+        function exportGrid() {
+            const gridData = [];
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = CANVAS_WIDTH;
+            tempCanvas.height = CANVAS_HEIGHT;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw all layers
+            layers.forEach(layer => {
+                if (layer.visible && layer.image) {
+                    tempCtx.save();
+                    tempCtx.globalAlpha = layer.opacity;
+                    drawLayerToContext(layer, tempCtx);
+                    tempCtx.restore();
+                }
+            });
+            
+            // Get reduced colors
+            const imageData = tempCtx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            const reducedData = reduceColors(imageData, selectedColorCount);
+            
+            // Convert to grid data
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                const row = [];
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const pixelX = x * CELL_SIZE;
+                    const pixelY = y * CELL_SIZE;
+                    const index = (pixelY * CANVAS_WIDTH + pixelX) * 4;
+                    
+                    if (reducedData.data[index + 3] === 0) {
+                        row.push(null);
+                    } else {
+                        const colorIndex = colorPalette.findIndex(c => 
+                            c.r === reducedData.data[index] &&
+                            c.g === reducedData.data[index + 1] &&
+                            c.b === reducedData.data[index + 2]
+                        );
+                        row.push(colorIndex);
+                    }
+                }
+                gridData.push(row);
+            }
+            
+            const exportData = {
+                width: GRID_WIDTH,
+                height: GRID_HEIGHT,
+                colors: colorPalette.slice(0, selectedColorCount).map(c => ({ r: c.r, g: c.g, b: c.b })),
+                grid: gridData
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = 'sock-grid-data.json';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+        
+        function saveProject() {
+            const projectData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                settings: {
+                    maxColors,
+                    selectedColorCount,
+                    maxPaletteSize,
+                    viewMode,
+                    gridWidth: GRID_WIDTH,
+                    gridHeight: GRID_HEIGHT
+                },
+                layers: layers.map(layer => ({
+                    id: layer.id,
+                    name: layer.name,
+                    visible: layer.visible,
+                    locked: layer.locked,
+                    opacity: layer.opacity,
+                    imageX: layer.imageX,
+                    imageY: layer.imageY,
+                    imageScale: layer.imageScale,
+                    imageRotation: layer.imageRotation,
+                    flipH: layer.flipH,
+                    flipV: layer.flipV,
+                    imageData: layer.image ? layer.image.src : null
+                })),
+                activeLayerId
+            };
+            
+            const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = 'sock-design-project.spad';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+        
+        function loadProject() {
+            document.getElementById('projectUpload').click();
+        }
+        
+        function handleProjectUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const projectData = JSON.parse(event.target.result);
+                    
+                    // Validate project data
+                    if (!projectData.version || !projectData.layers) {
+                        throw new Error('Invalid project file');
+                    }
+                    
+                    // Clear existing layers
+                    layers = [];
+                    layerIdCounter = 0;
+                    
+                    // Load settings
+                    if (projectData.settings) {
+                        maxColors = projectData.settings.maxColors || 16;
+                        selectedColorCount = projectData.settings.selectedColorCount || maxColors;
+                        maxPaletteSize = projectData.settings.maxPaletteSize || 255;
+                        viewMode = projectData.settings.viewMode || 'grid';
+                        document.getElementById('maxColors').value = selectedColorCount;
+                        document.getElementById('colorsLabel').textContent = selectedColorCount;
+                        document.getElementById('paletteSize').value = maxPaletteSize;
+                        document.getElementById('paletteSizeLabel').textContent = maxPaletteSize;
+                    }
+                    
+                    // Load layers
+                    const loadPromises = [];
+                    projectData.layers.forEach(layerData => {
+                        const layer = new Layer(layerData.name);
+                        layer.id = layerData.id;
+                        layer.visible = layerData.visible;
+                        layer.locked = layerData.locked;
+                        layer.opacity = layerData.opacity;
+                        layer.imageX = layerData.imageX;
+                        layer.imageY = layerData.imageY;
+                        layer.imageScale = layerData.imageScale;
+                        layer.imageRotation = layerData.imageRotation;
+                        layer.flipH = layerData.flipH || false;
+                        layer.flipV = layerData.flipV || false;
+                        
+                        if (layerData.imageData) {
+                            const promise = new Promise((resolve) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    layer.image = img;
+                                    layer.updateThumbnail();
+                                    resolve();
+                                };
+                                img.src = layerData.imageData;
+                            });
+                            loadPromises.push(promise);
+                        }
+                        
+                        layers.push(layer);
+                        layerIdCounter = Math.max(layerIdCounter, layer.id);
+                    });
+                    
+                    activeLayerId = projectData.activeLayerId || layers[0].id;
+                    
+                    Promise.all(loadPromises).then(() => {
+                        updateLayerPanel();
+                        updateControlsForActiveLayer();
+                        updateCanvas();
+                        saveState();
+                        alert('Project loaded successfully!');
+                    });
+                    
+                } catch (error) {
+                    alert('Error loading project: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset input
+            e.target.value = '';
+        }
+        
+        function handlePaletteUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    extractPaletteFromImage(img);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+            
+            // Reset input
+            e.target.value = '';
+        }
+        
+        function extractPaletteFromImage(img) {
+            // Create a canvas to read the image data
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.drawImage(img, 0, 0);
+            const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+            const data = imageData.data;
+            
+            const extractedColors = new Map();
+            
+            // Extract all unique colors from the image
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+                
+                if (a > 0) {
+                    const key = `${r},${g},${b}`;
+                    if (!extractedColors.has(key)) {
+                        const hsl = rgbToHsl(r, g, b);
+                        extractedColors.set(key, { r, g, b, count: 0, h: hsl.h, s: hsl.s, l: hsl.l });
+                    }
+                    extractedColors.get(key).count++;
+                }
+            }
+            
+            // Convert to array and sort by frequency
+            const newColors = Array.from(extractedColors.values())
+                .sort((a, b) => b.count - a.count)
+                .slice(0, maxPaletteSize);
+            
+            if (newColors.length > 0) {
+                // Replace current palette with extracted colors
+                colorPalette = newColors;
+                selectedColorCount = Math.min(selectedColorCount, colorPalette.length);
+                selectedColorCount = Math.max(1, selectedColorCount);
+                
+                updateColorPalette();
+                updateCanvas();
+                saveState();
+                
+                alert(`Loaded ${newColors.length} colors from image`);
+            } else {
+                alert('No colors found in the image');
+            }
+        }
+        
+        function resetPalette() {
+            colorPalette = [];
+            selectedColorCount = Math.min(maxColors, 16);
+            updateColorPalette();
+            updateCanvas();
+            saveState();
+        }
+        
+        // Performance optimization: Render inactive layers at lower quality
+        let layerCache = new Map();
+        
+        function updateLayerCache(layer) {
+            if (!layer.image || !layer.visible) {
+                layerCache.delete(layer.id);
+                return;
+            }
+            
+            const cacheCanvas = document.createElement('canvas');
+            cacheCanvas.width = CANVAS_WIDTH;
+            cacheCanvas.height = CANVAS_HEIGHT;
+            const cacheCtx = cacheCanvas.getContext('2d');
+            
+            cacheCtx.save();
+            cacheCtx.globalAlpha = layer.opacity;
+            drawLayerToContext(layer, cacheCtx);
+            cacheCtx.restore();
+            
+            layerCache.set(layer.id, cacheCanvas);
+        }
+        
+        function clearLayerCache() {
+            layerCache.clear();
+        }
+        
+        // Modified updateCanvas function with performance optimization
+        function updateCanvasOptimized() {
+            if (!layers.length) return;
+            
+            // Clear and draw grid
+            drawGrid(mainCtx);
+            
+            // Draw all visible layers
+            layers.forEach(layer => {
+                if (layer.visible && layer.image) {
+                    mainCtx.save();
+                    
+                    // Use cached version for inactive layers
+                    if (layer.id !== activeLayerId && layerCache.has(layer.id)) {
+                        mainCtx.drawImage(layerCache.get(layer.id), 0, 0);
+                    } else {
+                        mainCtx.globalAlpha = layer.opacity;
+                        drawLayerToContext(layer, mainCtx);
+                        
+                        // Cache inactive layers
+                        if (layer.id !== activeLayerId) {
+                            updateLayerCache(layer);
+                        }
+                    }
+                    
+                    mainCtx.restore();
+                }
+            });
+            
+            // Update resize handles for active layer
+            const activeLayer = getActiveLayer();
+            if (activeLayer && activeLayer.image && !activeLayer.locked) {
+                updateResizeHandles();
+                updateTransformOrigin();
+            } else {
+                document.getElementById('resizeHandles').classList.remove('active');
+                document.getElementById('transformOrigin').classList.remove('active');
+            }
+            
+            // Update pixelated preview
+            updatePixelatedPreview();
+        }
+        
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
